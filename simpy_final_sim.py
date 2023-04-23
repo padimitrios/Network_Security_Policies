@@ -33,10 +33,14 @@ class Switch:
     def __init__(self, env, model):
         self.env = env
         self.classifier = Classifier(model)
+        self.blacklist = []
 
     def receive_packet(self, sender, receiver, packet):
-        if self.classifier.classify(packet):
-            print(f"{self.env.now}: Malicious packet dropped.")
+        if self.classifier.classify(packet) or (sender in self.blacklist):
+            print(f"{self.env.now}: Malicious packet from {sender} dropped.")
+            if not ((sender in self.blacklist)):
+                self.blacklist.append(sender)
+                print(f"{self.env.now}: Sender {sender} appended on blacklist")
         else:
             self.forward_packet(packet, receiver)
 
@@ -82,6 +86,8 @@ def run_simulation(env, host1, host2, switch):
 if __name__ == '__main__':
     env = simpy.Environment()
     host1 = Host(env, "192.168.0.1")
+    host3 = Host(env, "192.168.0.3")
+    host4 = Host(env, "192.168.0.4")
     host2 = Host(env, "192.168.0.2")
     model = joblib.load('model.pkl')
     switch = Switch(env, model)
@@ -97,12 +103,14 @@ if __name__ == '__main__':
     cv.fit(corpus)
 
     # create a simulation process for host1 to send packets to host2 via switch
-    def send_packets(env, host1, host2, switch, num_packets):
+    def send_packets(env, terminals, receiver, switch, num_packets):
         for i in range(num_packets):
             packet = generate_packet()
-            host1.send_packet(packet, host2, switch)
+            sender = random.choice(terminals)
+            sender.send_packet(packet, receiver, switch)
             yield env.timeout(1)
 
+    terminals = [host1,host3,host4]
     # start the simulation process
-    env.process(send_packets(env, host1, host2, switch, 20))
+    env.process(send_packets(env, terminals, host2, switch, 20))
     env.run()
