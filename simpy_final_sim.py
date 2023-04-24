@@ -18,6 +18,28 @@ messages_array = [
     'FreeMsg Hey there darling its been 3 weeks now and no word back! Id like some fun you up for it still? Tb ok! XxX std chgs to send, 1.50 to rcv',
 ]
 
+class SDNController:
+    def __init__(self, env, model):
+        self.env = env
+        self.classifier = Classifier(model)
+        self.routing_table = {}
+    
+    def add_flow(self, sender, receiver):
+        self.routing_table[sender] = receiver
+    
+    def packet_from_switch(self, switch, sender, receiver, packet):
+
+        if self.routing_table[sender] != receiver.ip:
+            print(f"{self.env.now}: Anothorized communication from {sender}, packet dropped.")
+
+        if self.classifier.classify(packet):
+            print(f"{self.env.now}: Malicious packet from {sender} dropped.")
+            if not ((sender in switch.blacklist)):
+                switch.blacklist.append(sender)
+                print(f"{self.env.now}: Sender {sender} appended on blacklist")
+        else:
+            switch.forward_packet(packet, receiver)
+
 class Host:
     def __init__(self, env, ip):
         self.env = env
@@ -30,19 +52,16 @@ class Host:
         print(f"{self.env.now}: {self.ip} received packet: {packet}")
 
 class Switch:
-    def __init__(self, env, model):
+    def __init__(self, env, controller):
         self.env = env
-        self.classifier = Classifier(model)
+        self.controller = controller
         self.blacklist = []
 
     def receive_packet(self, sender, receiver, packet):
-        if self.classifier.classify(packet) or (sender in self.blacklist):
-            print(f"{self.env.now}: Malicious packet from {sender} dropped.")
-            if not ((sender in self.blacklist)):
-                self.blacklist.append(sender)
-                print(f"{self.env.now}: Sender {sender} appended on blacklist")
+        if sender in self.blacklist:
+            print(f"{self.env.now}: Untrusted sender {sender} tried to communicate with {receiver.ip}. Packet dropped.")
         else:
-            self.forward_packet(packet, receiver)
+            self.controller.packet_from_switch(self, sender, receiver, packet)
 
     def forward_packet(self, packet, receiver):
         self.send_packet(packet, receiver)
@@ -76,21 +95,20 @@ def generate_packet():
     packet = {'payload': random_message}
     return packet
 
-def run_simulation(env, host1, host2, switch):
-    while True:
-        # generate a packet and send it from host1 to host2 through the switch
-        packet = generate_packet()
-        host1.send_packet(packet, host2, switch)
-        yield env.timeout(1)
-
 if __name__ == '__main__':
     env = simpy.Environment()
     host1 = Host(env, "192.168.0.1")
     host3 = Host(env, "192.168.0.3")
     host4 = Host(env, "192.168.0.4")
     host2 = Host(env, "192.168.0.2")
+
     model = joblib.load('model.pkl')
-    switch = Switch(env, model)
+    controller = SDNController(env, model)
+    switch = Switch(env, controller)
+
+    controller.add_flow(host1.ip, host2.ip)
+    controller.add_flow(host3.ip, host2.ip)
+    controller.add_flow(host4.ip, host2.ip)
 
     # for message classification mutation
     cv = CountVectorizer(max_features=4000)
