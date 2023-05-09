@@ -121,7 +121,7 @@ if __name__ == '__main__':
     host2 = Host(env, "192.168.0.2")
 
     #import the classification model
-    model = joblib.load('model.pkl')
+    model = joblib.load('Prediction model/model.pkl')
     #create the controller
     controller = SDNController(env, model)
 
@@ -137,7 +137,7 @@ if __name__ == '__main__':
     cv = CountVectorizer(max_features=4000)
     ps = PorterStemmer()
     # Load the corpus list
-    with open('corpus.pkl', 'rb') as f:
+    with open('Prediction model/corpus.pkl', 'rb') as f:
         corpus = pickle.load(f)
 
     # fit the CountVectorizer again with the updated corpus

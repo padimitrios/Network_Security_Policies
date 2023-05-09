@@ -1,6 +1,11 @@
 # Network_Security_Policies
 An SDN network, with applied security policies to drop the malicius packets detected.
 
+## Topology
+<p align="center">
+  <img src="Topology/Architecture.png" alt="Network topology." width="700" height="700">
+</p>
+
 ## `Output`
 
     0: Malicious packet from 192.168.0.1 dropped.
