@@ -7,8 +7,7 @@ RSA digital signature scheme
 </p>
 
 ## `Output`
-<code>  
-0: 192.168.0.2 received packet: U dun say so early hor... U c already then say... <br>
+<code>0: 192.168.0.2 received packet: U dun say so early hor... U c already then say... <br>
 0: Packet forwarded.<br>
 1: 192.168.0.2 received packet: Nah I dont think he goes to usf, he lives around here though<br>
 1: Packet forwarded.<br>
@@ -40,4 +39,4 @@ RSA digital signature scheme
 19: Packet forwarded.<br>
 </code>
 
-### In packet message 17 the message was tempered
+### In packet 17 the message was tempered
